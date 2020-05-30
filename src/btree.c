@@ -4,6 +4,7 @@
 #include <sys/mman.h>
 #include "btree.h"
 
+//assert for debug use
 struct btree_node *btree_alloc() {
 	struct btree_node *node = NULL;
 //	node = (struct btree_node *)malloc(PAGE_SIZE);
