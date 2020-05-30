@@ -18,8 +18,29 @@ void btree_free(struct btree_node *p) {
 	munmap(p,PAGE_SIZE);
 //	free(p);
 }
+static int __btree_find_half(struct btree_node *node,unsigned long key,unsigned long *pos){
+	unsigned long i;
+	assert(pos && node);
+	for (i = 0; i < node->keynum;i++){
+		if (node->child[i].key >= key){
+			if (node->child[i].key != key)
+				i = (i == 0 ? i : i - 1);
+			break;
+		}
+	}
+	*pos = i;
+	if (i == node->keynum)
+		return 1;
+	return 0;
+}
+/*
 static int __btree_find_exact(struct btree_node *head , unsigned long *pos, unsigned long key_to_find) {
 	unsigned long i = 0;
+	__btree_find_half(head,key_to_find,&i);
+	assert(i < head->keynum && head->child[i].key == key_to_find);
+	*pos = i;
+	return 1;
+	
 	for (i = 0; head && i < head->keynum; i++) {
 		if (head->child[i].key == key_to_find) {
 			*pos = i;
@@ -27,44 +48,53 @@ static int __btree_find_exact(struct btree_node *head , unsigned long *pos, unsi
 		}
 	}
 	return 0;
+	
 }
-static void __btree_find_fuzzy(struct btree_node *head, unsigned long *pos, unsigned long key_to_find) {
+*/
+static void __btree_find_locate(struct btree_node *head, unsigned long key_to_find, unsigned long *pos) {
 	unsigned long i = 0;
-	*pos = 0;
 	if (!head) {
 //		printf("fuzzy:head null\n");
 		return;
 	}
+	*pos = 0;
+	__btree_find_half(head,key_to_find,&i);
 //	printf("fuzzy for,key_to_find %ld ",key_to_find);
+/*
 	for (i = 0; i < head->keynum; i++) {
 //		printf(" %ld ",head->child[i].key);
 		if (head->child[i].key >= key_to_find) {
 			break;
 		}
 	}
-	if (i == head->keynum)
-		*pos = i - 1;
-	else if (head->child[i].key == key_to_find) {
+*/
+	assert(head->child[i].key == key_to_find);
+	*pos = i;
+/*
+	if (head->child[i].key == key_to_find) {
 //		printf("fuzzyp1\n");
 		*pos = i;
 	}
 	else {
+		//This couldn't happen..
 //		printf("fuzzyp2\n");
+		assert(head->child[i].key == key_to_find);
 		*pos = i ? i - 1 : i;
 	}
+*/
 }
 static struct btree_node *__btree_find(
 		struct btree_node *head,
 		struct btree_node **pparent,struct btree_node **pnode,
 		unsigned long *ppos,unsigned long key){
-	struct btree_node *node;
+	struct btree_node *node,*parent = NULL;
 	unsigned long i = 0;
-	if (head == NULL)
-		goto out;
+	assert(head);
 	node = head;
 	if (head->keynum == 0)
 		goto out;
-	while(node && !BTREE_LEAF(node)){
+	do{
+		assert(node);
 		//if (node->keynum == 0)
 		//	i = 0;
 		//else {
@@ -93,37 +123,41 @@ static struct btree_node *__btree_find(
 		//		}
 		//	} while (start != end);
 		//}
+		/*
 		for (i = 0; i < node->keynum;i++){
-
-
 			if (node->child[i].key >= key){
 				if (node->child[i].key != key)
 					i = (i == 0 ? i : i - 1);
 				break;
 			}
-
-
 		}
-
-		if (i == node->keynum) 
+		*/
+		
+		unsigned int hret;
+		hret = __btree_find_half(node,key,&i);
+		if (BTREE_LEAF(node))
+			break;
+		parent = node;
+		if (hret)
 			node = node->child[--i].p;
 		else 
 			node = node->child[i].p;
-	}
-finish_loop:
-	if (node == NULL)
-		goto out;
+	} while(true);
+	assert(node);
 	if (pparent)
-		*pparent = node->parent;
+		*pparent = parent;
 	if (pnode)
 		*pnode = node;
 	if (ppos)
 		*ppos = i;
-	
+	if (node->child[i].key == key)
+		return node;
+	/*
 	for (i = 0; node && i < node->keynum;i++){
 		if (key == node->child[i].key)
 			return node;
 	}
+	*/
 	return NULL;
 out:
 	if (pparent)
@@ -160,16 +194,12 @@ static void __btree_move(struct btree_node *node,unsigned long from,unsigned lon
 static void __btree_spread_mod(struct btree_node *node,unsigned long key_to_find) {
 	struct btree_node *pnode;
 	unsigned long pos;
-	if (node->keynum == 0)
-		assert(false);
+	assert(node && node->parent);
 	do {
-		int ret = __btree_find_exact(node->parent, &pos, key_to_find);
-		if (!ret)
-			break;
-		assert(key_to_find == node->parent->child[pos].key);
+		__btree_find_locate(node->parent, key_to_find,&pos);
 		node->parent->child[pos].key = node->child[0].key;
 		node = node->parent;
-	} while (node && pos == 0);
+	} while (node->parent && pos == 0);
 }
 static void __btree_insert_key(struct btree_node *node,struct btree_node *p,unsigned long key,unsigned long *pos){
 	unsigned long i,j;
@@ -381,7 +411,7 @@ int btree_insert(struct btree_node **_head,unsigned long key){
 		__btree_insert_key_leaf(node,key);
 		assert(node->parent == parent);
 		while(BTREE_OVERFLOW(node)){
-			__btree_find_fuzzy(node->parent, &ppos, node->child[0].key);
+			__btree_find_locate(node->parent, node->child[0].key,&ppos);
 //			printf("loop %d,key %ld,num %ld ,ppos %ld\n",++i,key,parent ? parent->keynum : 0,ppos);
 //			printf("pos %ld ,pkey %ld ,node key %ld\n",ppos,parent ? parent->child[ppos].key : 0,node->child[0].key);
 			if (parent && __btree_sibling_balance(parent,node,ppos)){
