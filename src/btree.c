@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,8 +13,9 @@ struct btree_node *btree_alloc() {
 	assert(node->keynum == 0);
 	return node;
 }
-void btree_free(struct btree_node *) {
-
+void btree_free(struct btree_node *p) {
+	munmap(p,PAGE_SIZE);
+//	free(p);
 }
 static int __btree_find_exact(struct btree_node *head , unsigned long *pos, unsigned long key_to_find) {
 	unsigned long i = 0;
@@ -31,12 +31,12 @@ static void __btree_find_fuzzy(struct btree_node *head, unsigned long *pos, unsi
 	unsigned long i = 0;
 	*pos = 0;
 	if (!head) {
-		printf("fuzzy:head null\n");
+//		printf("fuzzy:head null\n");
 		return;
 	}
-	printf("fuzzy for,key_to_find %ld ",key_to_find);
+//	printf("fuzzy for,key_to_find %ld ",key_to_find);
 	for (i = 0; i < head->keynum; i++) {
-		printf(" %ld ",head->child[i].key);
+//		printf(" %ld ",head->child[i].key);
 		if (head->child[i].key >= key_to_find) {
 			break;
 		}
@@ -44,11 +44,11 @@ static void __btree_find_fuzzy(struct btree_node *head, unsigned long *pos, unsi
 	if (i == head->keynum)
 		*pos = i - 1;
 	else if (head->child[i].key == key_to_find) {
-		printf("fuzzyp1\n");
+//		printf("fuzzyp1\n");
 		*pos = i;
 	}
 	else {
-		printf("fuzzyp2\n");
+//		printf("fuzzyp2\n");
 		*pos = i ? i - 1 : i;
 	}
 }
@@ -306,20 +306,20 @@ static int __btree_sibling_balance(
 	silb = __btree_find_avaliable_silbing(parent,&pos);
 	if (!silb)
 		return 0;
-	printf("balance:silb child[0] %ld\n",silb->child[0].key);
-	btree_show(node);
-	btree_show(silb);
+//	printf("balance:silb child[0] %ld\n",silb->child[0].key);
+//	btree_show(node);
+//	btree_show(silb);
 	__btree_move_element(silb,node,1);
 	if (silb->child[0].key < node->child[0].key) {
-		printf("balcance p1\n");
+//		printf("balcance p1\n");
 		__btree_spread_mod(node, silb->child[silb->keynum - 1].key);
 	}
 	else {
-		printf("balcance p2\n");
+//		printf("balcance p2\n");
 		__btree_spread_mod(silb, silb->child[1].key);
 	}
-	btree_show(node);
-	btree_show(silb);
+//	btree_show(node);
+//	btree_show(silb);
 	return 1;
 }
 static struct btree_node *__btree_rebalance(
@@ -377,17 +377,16 @@ int btree_insert(struct btree_node **_head,unsigned long key){
 			nhead = __btree_rebalance(NULL,head);
 	}
 	else {
-		int i = 0;
 		__btree_insert_key_leaf(node,key);
 		assert(node->parent == parent);
 		while(BTREE_OVERFLOW(node)){
 			__btree_find_fuzzy(node->parent, &ppos, node->child[0].key);
-			printf("loop %d,key %ld,num %ld ,ppos %ld\n",++i,key,parent ? parent->keynum : 0,ppos);
-			printf("pos %ld ,pkey %ld ,node key %ld\n",ppos,parent ? parent->child[ppos].key : 0,node->child[0].key);
+//			printf("loop %d,key %ld,num %ld ,ppos %ld\n",++i,key,parent ? parent->keynum : 0,ppos);
+//			printf("pos %ld ,pkey %ld ,node key %ld\n",ppos,parent ? parent->child[ppos].key : 0,node->child[0].key);
 			if (parent && __btree_sibling_balance(parent,node,ppos)){
-				__btree_find_fuzzy(node->parent, &ppos, node->child[0].key);
-				printf("parent %p\n",parent);
-				printf("pos %ld ,pkey %ld ,node key %ld\n",ppos,parent ? parent->child[ppos].key : 0,node->child[0].key);
+//				__btree_find_fuzzy(node->parent, &ppos, node->child[0].key);
+//				printf("parent %p\n",parent);
+//				printf("pos %ld ,pkey %ld ,node key %ld\n",ppos,parent ? parent->child[ppos].key : 0,node->child[0].key);
 				assert((!parent || parent->child[ppos].key <= node->child[0].key));
 				break;
 			}
