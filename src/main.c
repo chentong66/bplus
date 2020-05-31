@@ -14,6 +14,8 @@ int main(){
 			i = 5;
 		cout << i << endl;
 		btree_insert(&head,i);
+		btree_insert(&head,i + 100000);
+		btree_insert(&head, i * i);
 		btree_insert(&head,100000 - i);
 		btree_insert(&head,i);
 		btree_insert(&head,100000 - i);

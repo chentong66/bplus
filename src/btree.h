@@ -11,11 +11,11 @@ struct btree_node {
 	unsigned long keynum;
 	struct btree_node *next;
 	struct btree_node *parent;
-	struct btree_inode child[5];
+	struct btree_inode child[0];
 }__attribute__((aligned(sizeof(unsigned long))));
-//#define BTREE_ORDER ((((PAGE_SIZE) - sizeof(struct btree_node)) \
+#define BTREE_ORDER ((((PAGE_SIZE) - sizeof(struct btree_node)) \
 		/ sizeof(struct btree_inode)) - 1)
-#define BTREE_ORDER 4
+//#define BTREE_ORDER 4
 #define BTREE_ORDER_HALF (BTREE_ORDER % 2 ? (BTREE_ORDER + 1) / 2 \
 		: BTREE_ORDER / 2)
 #define BTREE_FULL(pointer) ((pointer)->keynum >= BTREE_ORDER)

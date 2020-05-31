@@ -24,7 +24,7 @@ static int __btree_find_half(struct btree_node *node,unsigned long key,unsigned 
 	if (!node || !pos)
 		return 0;
 	assert(node->keynum > 0);
-	goto binary_search_work_on;
+	/*
 	for (i = 0; i < node->keynum;i++){
 		if (node->child[i].key >= key){
 			if (node->child[i].key != key)
@@ -36,7 +36,7 @@ static int __btree_find_half(struct btree_node *node,unsigned long key,unsigned 
 	if (i == node->keynum)
 		return 1;
 	return 0;
-binary_search_work_on:
+	*/
 	{
 		unsigned long start,end,half;
 		start = 0;
@@ -92,39 +92,17 @@ static int __btree_find_exact(struct btree_node *head , unsigned long *pos, unsi
 	return 0;
 	
 }
-*/
+
 static void __btree_find_locate(struct btree_node *head, unsigned long key_to_find, unsigned long *pos) {
 	unsigned long i = 0;
 	if (!head) {
-//		printf("fuzzy:head null\n");
 		return;
-	}
 	*pos = 0;
 	__btree_find_half(head,key_to_find,&i);
-//	printf("fuzzy for,key_to_find %ld ",key_to_find);
-/*
-	for (i = 0; i < head->keynum; i++) {
-//		printf(" %ld ",head->child[i].key);
-		if (head->child[i].key >= key_to_find) {
-			break;
-		}
-	}
-*/
 	assert(head->child[i].key == key_to_find);
 	*pos = i;
-/*
-	if (head->child[i].key == key_to_find) {
-//		printf("fuzzyp1\n");
-		*pos = i;
-	}
-	else {
-		//This couldn't happen..
-//		printf("fuzzyp2\n");
-		assert(head->child[i].key == key_to_find);
-		*pos = i ? i - 1 : i;
-	}
-*/
 }
+*/
 static struct btree_node *__btree_find(
 		struct btree_node *head,
 		struct btree_node **pparent,struct btree_node **pnode,
