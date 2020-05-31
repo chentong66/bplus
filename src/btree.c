@@ -18,11 +18,13 @@ void btree_free(struct btree_node *p) {
 	munmap(p,PAGE_SIZE);
 //	free(p);
 }
-//TODO: reimplemnt __btree_find_half() using binary search method ..
+//TODO: reimplemnt __btree_find_half() with binary-search method .. [solved]
 static int __btree_find_half(struct btree_node *node,unsigned long key,unsigned long *pos){
 	unsigned long i;
 	if (!node || !pos)
 		return 0;
+	assert(node->keynum > 0);
+	goto binary_search_work_on;
 	for (i = 0; i < node->keynum;i++){
 		if (node->child[i].key >= key){
 			if (node->child[i].key != key)
@@ -40,18 +42,26 @@ binary_search_work_on:
 		start = 0;
 		end = node->keynum - 1;
 		while(true){
-			half == (start + end) >> 1;
-			if (half == start) {
+			half = (start + end) >> 1;
+			if (node->child[half].key == key){
+				i = half;
+				break;
+			}
+			else if (half == start) {
 				if (node->child[end].key >= key){
-					i = end;
-					if (node->child[i].key != key)
-						i = (i == 0 ? i : i - 1);
+					if (node->child[end].key == key)
+						i = end;	
+					else
+						i = (end == 0 ? end : end - 1);
+				}
+				else if (node->child[half].key > key){
+					i = (half == 0 ? half : half - 1);
 				}
 				else
 					i = node->keynum;
 				break;
 			}
-			else if (node->child[half].key >= key){
+			else if (node->child[half].key > key){
 				end = half;
 			}
 			else {
@@ -237,7 +247,7 @@ static void __btree_spread_mod(struct btree_node *node,unsigned long key_to_find
 static void __btree_insert_key(struct btree_node *node,struct btree_node *p,unsigned long key,unsigned long *pos){
 	unsigned long i,j;
 	assert(node);
-	if (!pos){
+	if (!pos && node->keynum){
 		/*
 		for (i = 0; i < node->keynum; i++){
 			assert(key != node->child[i].key);
@@ -255,11 +265,13 @@ static void __btree_insert_key(struct btree_node *node,struct btree_node *p,unsi
 		
 		
 	}
-	else {
+	else if (pos){
 		i = *pos;
 		if (i != node->keynum)
 			i++;
 	}
+	else
+		i = 0;
 	j = node->keynum;
 	if (node->keynum > 0)
 		__btree_move(node,i,1,0);
