@@ -34,6 +34,36 @@ static int __btree_find_half(struct btree_node *node,unsigned long key,unsigned 
 	if (i == node->keynum)
 		return 1;
 	return 0;
+binary_search_work_on:
+	{
+		unsigned long start,end,half;
+		start = 0;
+		end = node->keynum - 1;
+		while(true){
+			half == (start + end) >> 1;
+			if (half == start) {
+				if (node->child[end].key >= key){
+					i = end;
+					if (node->child[i].key != key)
+						i = (i == 0 ? i : i - 1);
+				}
+				else
+					i = node->keynum;
+				break;
+			}
+			else if (node->child[half].key >= key){
+				end = half;
+			}
+			else {
+				start = half;
+			}
+		}
+		*pos = i;
+		if (i == node->keynum)
+			return 1;
+		return 0;
+
+	}
 }
 /*
 static int __btree_find_exact(struct btree_node *head , unsigned long *pos, unsigned long key_to_find) {
