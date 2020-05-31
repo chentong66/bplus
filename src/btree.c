@@ -18,9 +18,11 @@ void btree_free(struct btree_node *p) {
 	munmap(p,PAGE_SIZE);
 //	free(p);
 }
+//TODO: reimplemnt __btree_find_half() using binary search method ..
 static int __btree_find_half(struct btree_node *node,unsigned long key,unsigned long *pos){
 	unsigned long i;
-	assert(pos && node);
+	if (!node || !pos)
+		return 0;
 	for (i = 0; i < node->keynum;i++){
 		if (node->child[i].key >= key){
 			if (node->child[i].key != key)
@@ -132,11 +134,11 @@ static struct btree_node *__btree_find(
 			}
 		}
 		*/
-		
 		unsigned int hret;
 		hret = __btree_find_half(node,key,&i);
-		if (BTREE_LEAF(node))
+		if (BTREE_LEAF(node)) {
 			break;
+		}
 		parent = node;
 		if (hret)
 			node = node->child[--i].p;
@@ -196,25 +198,38 @@ static void __btree_spread_mod(struct btree_node *node,unsigned long key_to_find
 	unsigned long pos;
 	assert(node && node->parent);
 	do {
-		__btree_find_locate(node->parent, key_to_find,&pos);
+		__btree_find_half(node->parent, key_to_find,&pos);
+		assert(node->parent->child[pos].key == key_to_find);
 		node->parent->child[pos].key = node->child[0].key;
 		node = node->parent;
 	} while (node->parent && pos == 0);
 }
 static void __btree_insert_key(struct btree_node *node,struct btree_node *p,unsigned long key,unsigned long *pos){
 	unsigned long i,j;
-	if (node == NULL) {
-		node = NULL;
-	}
+	assert(node);
 	if (!pos){
+		/*
 		for (i = 0; i < node->keynum; i++){
 			assert(key != node->child[i].key);
 			if (node->child[i].key > key)
 			       break;
 		}
+		*/
+		
+		int hret;
+		hret = __btree_find_half(node,key,&i);
+		if (!hret) {
+			assert(node->child[i].key != key);
+			i++;
+		}
+		
+		
 	}
-	else
+	else {
 		i = *pos;
+		if (i != node->keynum)
+			i++;
+	}
 	j = node->keynum;
 	if (node->keynum > 0)
 		__btree_move(node,i,1,0);
@@ -237,10 +252,11 @@ static void __btree_insert_key(struct btree_node *node,struct btree_node *p,unsi
 		__btree_spread_mod(node,node->child[1].key);
 	}
 }
-
+/*
 static void __btree_insert_key_leaf(struct btree_node *node, unsigned long key) {
 	return __btree_insert_key(node, NULL, key, NULL);
 }
+*/
 static struct btree_node *__btree_find_avaliable_silbing(
 		struct btree_node *parent,
 		unsigned long *_pos){
@@ -402,17 +418,20 @@ int btree_insert(struct btree_node **_head,unsigned long key){
 	if(__btree_find(head,&parent,&node,&ppos,key))
 		return 1;
 	nhead = head;
+//	assert(!parent || (ppos == parent->keynum || parent->child[ppos].p == node));
 	if (BTREE_LEAF(head)){
-		__btree_insert_key_leaf(head,key);
+		__btree_insert_key(head,NULL,key,&ppos);
 		if (BTREE_OVERFLOW(head))
 			nhead = __btree_rebalance(NULL,head);
 	}
 	else {
-		__btree_insert_key_leaf(node,key);
+//		__btree_insert_key_leaf(node,key);
+		__btree_insert_key(node,NULL,key,&ppos);
 		assert(node->parent == parent);
 		while(BTREE_OVERFLOW(node)){
-			__btree_find_locate(node->parent, node->child[0].key,&ppos);
 //			printf("loop %d,key %ld,num %ld ,ppos %ld\n",++i,key,parent ? parent->keynum : 0,ppos);
+			__btree_find_half(node->parent, node->child[0].key,&ppos);
+//			__btree_find_locate(node->parent, node->child[0].key,&ppos);
 //			printf("pos %ld ,pkey %ld ,node key %ld\n",ppos,parent ? parent->child[ppos].key : 0,node->child[0].key);
 			if (parent && __btree_sibling_balance(parent,node,ppos)){
 //				__btree_find_fuzzy(node->parent, &ppos, node->child[0].key);
