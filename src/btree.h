@@ -1,5 +1,5 @@
 #undef PAGE_SIZE
-#define PAGE_SIZE 8192
+#define PAGE_SIZE (8192)
 #include <iostream>
 #include <assert.h>
 using namespace std;
