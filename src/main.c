@@ -8,20 +8,24 @@ int main(){
 	unsigned long i = 0;
 	cout << BTREE_ORDER << " " << PAGE_SIZE << endl;
 	cout << sizeof(*head) << endl;
-	while ( i < 10000000) {
+	t = clock();
+	while ( i < 100000000) {
 		btree_insert(&head,i);
-		btree_insert(&head,i << 2);
+		btree_insert(&head,100000000 - i);
 		i++;
 	}
+	t = clock() - t;
+	printf("insert time = %lf s\n",((float)(t) / CLOCKS_PER_SEC));
 //	btree_show(head);
 	t = clock();
-	while(i > 5000000){
+	while(i > 50000000){
 		struct btree_node *tmp = btree_find(head,i);
-//		btree_find(head,i >> 1);
-		tmp = btree_find(head,10000000 - i);
-		tmp = btree_find(head,i << 2);
-		tmp = btree_find(head,(10000000 - i) << 2);
-		tmp = btree_find(head,i * i);
+		tmp = btree_find(head,100000000 - i);
+		btree_find(head,i);
+		tmp = btree_find(head,100000000 - i);
+		btree_find(head,i << 1);
+		tmp = btree_find(head,i >> 1);
+//		tmp = btree_find(head,i * i);
 		/*if (tmp)
 			cout << 1 << " ";
 		else 
@@ -32,7 +36,8 @@ int main(){
 		i--;
 	}
 	t = clock() - t;
-	printf("time = %lf s\n",((float)(t) / CLOCKS_PER_SEC));
+	printf("serach time = %lf s\n",((float)(t) / CLOCKS_PER_SEC));
+	btree_show(head);
 	printf("head->keynum %ld\n",head->keynum);
 	return 0;
 }
