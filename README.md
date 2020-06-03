@@ -1,4 +1,4 @@
 B+ Tree in C
 
 
-By now only search and insert functions are implemented.
+By now  search, insert and remove(experimental) functions are implemented.
