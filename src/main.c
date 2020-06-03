@@ -18,6 +18,7 @@ int main(){
 	printf("insert time = %lf s\n",((float)(t) / CLOCKS_PER_SEC));
 //	btree_show(head);
 	t = clock();
+	i = 100000000;
 	while(i > 50000000){
 		struct btree_node *tmp = btree_find(head,i);
 		tmp = btree_find(head,100000000 - i);
@@ -35,9 +36,19 @@ int main(){
 //		btree_find(head,i >> 2);
 		i--;
 	}
+	i = 100000000;
 	t = clock() - t;
 	printf("serach time = %lf s\n",((float)(t) / CLOCKS_PER_SEC));
-	btree_show(head);
+//	btree_show(head);
 	printf("head->keynum %ld\n",head->keynum);
+	t = clock();
+	while(i > 50000000){
+		btree_remove(head,i);
+		btree_remove(head,100000000 - i);
+		i--;
+	}
+	t = clock() - t;
+	printf("remove time = %lf s\n",((float)(t) / CLOCKS_PER_SEC));
+	btree_show(head);
 	return 0;
 }

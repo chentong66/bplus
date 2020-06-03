@@ -46,12 +46,12 @@ inline void btree_show(struct btree_node *head) {
 		node = node->child[0].p;
 	while (node) {
 		for (int i = 0; i < node->keynum; i++) {
-			assert(node->keynum >= BTREE_ORDER_HALF);
+			assert(BTREE_HEAD(node) || node->keynum >= BTREE_ORDER_HALF);
 			if (node->child[i].key && node->child[i].key <= tmp){
 				cout << "Ouch!" << endl;
 				assert(false);
 			}
-//			cout << node->child[i].key << " ";
+			cout << node->child[i].key << " ";
 			count++;
 			tmp = node->child[i].key;
 		}

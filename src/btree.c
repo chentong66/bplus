@@ -418,13 +418,13 @@ out_free_tmp:
 out:
 	return NULL;
 }
-static int ___btree_fill_or_merge_mod(struct btree_node *target,struct btree_node *victim){
+static int ___btree_fill_or_merge_mod(struct btree_node *target,struct btree_node *victim,unsigned long v_ppos){
 	assert(target && victim);
 	if (victim->keynum > BTREE_ORDER_HALF){
 		__btree_move_element(target,victim,1);
 		assert(target->keynum == BTREE_ORDER_HALF);
 		if (target->child[0].key < victim->child[0].key)
-			__btree_spread_mod(victim,target->child[BTREE_ORDER_HALF].key);
+			__btree_spread_mod(victim,target->child[BTREE_ORDER_HALF - 1].key);
 		else
 			__btree_spread_mod(target,target->child[1].key);
 		return 1;
@@ -433,6 +433,13 @@ static int ___btree_fill_or_merge_mod(struct btree_node *target,struct btree_nod
 		unsigned long key = victim->child[0].key;
 		bool left = target->child[0].key < victim->child[0].key ? true : false;
 		__btree_move_element(victim,target,target->keynum);
+		if (v_ppos && left) {
+			struct btree_node *before = target->parent->child[v_ppos - 1].p;
+			before->next = target;
+		}
+		else if (!left) {
+			victim->next = target->next;
+		}
 		if (left)
 			__btree_spread_mod(victim,key);
 		return 0;
@@ -441,18 +448,38 @@ static int ___btree_fill_or_merge_mod(struct btree_node *target,struct btree_nod
 
 static void ___btree_erase(struct btree_node *node,unsigned long pos){
 	do{
-		struct btree_node *parent, *silb;
+		struct btree_node *parent, *silb, *freed;
 		unsigned long hkey;
 		unsigned long silb_pos, ppos;
 		assert(node->keynum > 0);
-		hkey = node->child[0].key;
-		__btree_move(node,pos,1,1);
+		if (node->child[0].p && node->child[0].p->keynum == 0) {
+			assert(node->keynum >= 2);
+			hkey = node->child[1].key;
+		}
+		else
+			hkey = node->child[0].key;
+		freed = node->child[pos].p;
+		__btree_move(node,pos + 1,1,1);
 		node->keynum -= 1;
-		if (BTREE_HEAD(node) || BTREE_HALF(node))
+		if (pos == 0 && node->parent)
+			__btree_spread_mod(node, hkey);
+		if (freed)
+			__btree_free(freed);
+		if (BTREE_HALF(node))
 			break;
+		if (BTREE_HEAD(node)) {
+			if (node->keynum == 1 && !BTREE_LEAF(node)) {
+				struct btree_node *tmp = node->child[0].p;
+				node->child[0].p = NULL;
+				node->keynum = 0;
+				__btree_move_element(node, tmp, tmp->keynum);
+				__btree_free(tmp);
+			}
+			break;
+		}
 		parent = node->parent;
 		__btree_find_half(node->parent, hkey,&ppos);
-		assert(ppos < node->parent->keynum && node->parent->keynum >= 2);
+		assert(ppos < node->parent->keynum);
 		if (ppos == 0){
 			silb_pos = ppos + 1;
 		}
@@ -460,8 +487,9 @@ static void ___btree_erase(struct btree_node *node,unsigned long pos){
 			silb_pos = ppos - 1;
 		}
 		silb = node->parent->child[silb_pos].p;
-		if (___btree_fill_or_merge_mod(node,silb))
+		if (___btree_fill_or_merge_mod(node,silb,ppos))
 			break;
+		
 		node = node->parent;
 		pos = ppos;
 		assert(node);
@@ -572,9 +600,16 @@ int btree_insert(struct btree_node **_head,unsigned long key){
 	return 0;
 
 }
-int btree_remove(struct btree_head *head,unsigned long key){
-	return 0;	
+int btree_remove(struct btree_node *head,unsigned long key){
+	assert(head != NULL);
+	struct btree_node *parent, *node;
+	unsigned long ppos;
+	if (__btree_find(head, &parent, &node, &ppos, key)) {
+		___btree_erase(node, ppos);
+		return 1;
+	}
+	return 0;
 }
-int btree_delete(struct btree_head *head){
+int btree_delete(struct btree_node *head){
 	return 0;
 }
