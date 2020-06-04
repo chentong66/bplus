@@ -15,13 +15,9 @@ insert time = 25.890659 s
 
 lookup..
 
-total numbers: 99999999
-
 lookup time = 5.915873 s
 
 remove..
-
-total numbers: 1
 
 remove time = 21.767515 s
 
