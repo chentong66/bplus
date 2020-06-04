@@ -23,19 +23,6 @@ static int __btree_find_half(struct btree_node *node,unsigned long key,unsigned 
 	unsigned long i;
 	assert(!(!node || !pos));
 	assert(node->keynum > 0);
-	/*
-	for (i = 0; i < node->keynum;i++){
-		if (node->child[i].key >= key){
-			if (node->child[i].key != key)
-				i = (i == 0 ? i : i - 1);
-			break;
-		}
-	}
-	*pos = i;
-	if (i == node->keynum)
-		return 1;
-	return 0;
-	*/
 	{
 		unsigned long start,end,half;
 		start = 0;
@@ -74,34 +61,6 @@ static int __btree_find_half(struct btree_node *node,unsigned long key,unsigned 
 
 	}
 }
-/*
-static int __btree_find_exact(struct btree_node *head , unsigned long *pos, unsigned long key_to_find) {
-	unsigned long i = 0;
-	__btree_find_half(head,key_to_find,&i);
-	assert(i < head->keynum && head->child[i].key == key_to_find);
-	*pos = i;
-	return 1;
-	
-	for (i = 0; head && i < head->keynum; i++) {
-		if (head->child[i].key == key_to_find) {
-			*pos = i;
-			return 1;
-		}
-	}
-	return 0;
-	
-}
-
-static void __btree_find_locate(struct btree_node *head, unsigned long key_to_find, unsigned long *pos) {
-	unsigned long i = 0;
-	if (!head) {
-		return;
-	*pos = 0;
-	__btree_find_half(head,key_to_find,&i);
-	assert(head->child[i].key == key_to_find);
-	*pos = i;
-}
-*/
 static struct btree_node *__btree_find(
 		struct btree_node *head,
 		struct btree_node **pparent,struct btree_node **pnode,
@@ -114,43 +73,6 @@ static struct btree_node *__btree_find(
 		goto out;
 	do{
 		assert(node);
-		//if (node->keynum == 0)
-		//	i = 0;
-		//else {
-		//	unsigned long start = 0;
-		//	unsigned long end = node->keynum - 1;
-		//	unsigned long half;
-		//	do {
-		//		half = (start + end) >> 1;
-		//		i = half;
-		//		if (half && node->child[half].key >= key && node->child[half - 1].key <= key) {
-		//			i = half - 1;
-		//			break;
-		//		}
-		//		if (half == start) {
-		//			if (half < node->keynum - 1 && node->child[half + 1].key <= key)
-		//				i = half + 1;
-		//			break;
-		//		}
-		//		else {
-		//			if (node->child[half].key >= key) {
-		//				end = half;
-		//			}
-		//			else {
-		//				start = half;
-		//			}
-		//		}
-		//	} while (start != end);
-		//}
-		/*
-		for (i = 0; i < node->keynum;i++){
-			if (node->child[i].key >= key){
-				if (node->child[i].key != key)
-					i = (i == 0 ? i : i - 1);
-				break;
-			}
-		}
-		*/
 		unsigned int hret;
 		hret = __btree_find_half(node,key,&i);
 		if (BTREE_LEAF(node)) {
@@ -171,12 +93,6 @@ static struct btree_node *__btree_find(
 		*ppos = i;
 	if (node->child[i].key == key)
 		return node;
-	/*
-	for (i = 0; node && i < node->keynum;i++){
-		if (key == node->child[i].key)
-			return node;
-	}
-	*/
 	return NULL;
 out:
 	if (pparent)
@@ -226,14 +142,6 @@ static void __btree_insert_key(struct btree_node *node,struct btree_node *p,unsi
 	unsigned long i,j;
 	assert(node);
 	if (!pos && node->keynum){
-		/*
-		for (i = 0; i < node->keynum; i++){
-			assert(key != node->child[i].key);
-			if (node->child[i].key > key)
-			       break;
-		}
-		*/
-		
 		int hret;
 		hret = __btree_find_half(node,key,&i);
 		if (!hret) {
@@ -272,11 +180,6 @@ static void __btree_insert_key(struct btree_node *node,struct btree_node *p,unsi
 		__btree_spread_mod(node,node->child[1].key);
 	}
 }
-/*
-static void __btree_insert_key_leaf(struct btree_node *node, unsigned long key) {
-	return __btree_insert_key(node, NULL, key, NULL);
-}
-*/
 static struct btree_node *__btree_find_avaliable_silbing(
 		struct btree_node *parent,
 		unsigned long *_pos){
@@ -373,20 +276,13 @@ static int __btree_sibling_balance(
 	silb = __btree_find_avaliable_silbing(parent,&pos);
 	if (!silb)
 		return 0;
-//	printf("balance:silb child[0] %ld\n",silb->child[0].key);
-//	btree_show(node);
-//	btree_show(silb);
 	__btree_move_element(silb,node,1);
 	if (silb->child[0].key < node->child[0].key) {
-//		printf("balcance p1\n");
 		__btree_spread_mod(node, silb->child[silb->keynum - 1].key);
 	}
 	else {
-//		printf("balcance p2\n");
 		__btree_spread_mod(silb, silb->child[1].key);
 	}
-//	btree_show(node);
-//	btree_show(silb);
 	return 1;
 }
 static struct btree_node *__btree_rebalance(
@@ -493,41 +389,6 @@ static void ___btree_erase(struct btree_node *node,unsigned long pos){
 		node = node->parent;
 		pos = ppos;
 		assert(node);
-//		__btree_find_half(node,key,&pos);
-		/*
-		assert(ppos < node->parent->keynum);
-		if (ppos == 0) {
-			silb_next = parent->child[next].p;
-			extra = silb_next->keynum - BTREE_ORDER_HALF;
-		}
-		else {
-			unsigned long prev = ppos - 1,
-				      next = ppos + 1;
-			if (next < node->keynum){
-
-			}
-			else {
-			}
-
-		}
-		assert(node->parent->keynum > 1);
-		if (extra){
-			__btree_move_element(node,silb_next,1);
-			assert(node->keynum == BTREE_ORDER_HALF);
-			__btree_spread_mod(silb_next,node->child[BTREE_HALF].key);
-			break;
-		}
-		else {
-			assert(left >= node->keynum);
-			__btree_move_element(silb_next,node,node->keynum);
-			__btree_move(node->parent,ppos,1,1);
-			node->parent->keynum--;
-			__btree_spread_mod(silb_next,silb_next->child[0].key);
-		}
-		node = node->parent;
-		assert(node);
-		__btree_find_half(node,key,&pos);
-		*/
 	}while(true);
 }
 static void __btree_erase(struct btree_node *head, unsigned long key) {
@@ -554,24 +415,16 @@ int btree_insert(struct btree_node **_head,unsigned long key){
 	if(__btree_find(head,&parent,&node,&ppos,key))
 		return 1;
 	nhead = head;
-//	assert(!parent || (ppos == parent->keynum || parent->child[ppos].p == node));
 	if (BTREE_LEAF(head)){
 		__btree_insert_key(head,NULL,key,&ppos);
 		if (BTREE_OVERFLOW(head))
 			nhead = __btree_rebalance(NULL,head);
 	}
 	else {
-//		__btree_insert_key_leaf(node,key);
 		__btree_insert_key(node,NULL,key,&ppos);
 		assert(node->parent == parent);
 		while(BTREE_OVERFLOW(node)){
-//			printf("loop %d,key %ld,num %ld ,ppos %ld\n",++i,key,parent ? parent->keynum : 0,ppos);
-//			__btree_find_locate(node->parent, node->child[0].key,&ppos);
-//			printf("pos %ld ,pkey %ld ,node key %ld\n",ppos,parent ? parent->child[ppos].key : 0,node->child[0].key);
 			if (parent){
-//				__btree_find_fuzzy(node->parent, &ppos, node->child[0].key);
-//				printf("parent %p\n",parent);
-//				printf("pos %ld ,pkey %ld ,node key %ld\n",ppos,parent ? parent->child[ppos].key : 0,node->child[0].key);
 				__btree_find_half(node->parent, node->child[0].key,&ppos);
 				if (__btree_sibling_balance(parent,node,ppos)){
 					assert((!parent || parent->child[ppos].key <= node->child[0].key));
