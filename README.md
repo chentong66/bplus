@@ -9,13 +9,20 @@ Running result:
 
 insert..
 
-insert time = 34.274906 s
+total numbers: 99999999
+
+insert time = 25.890659 s
 
 lookup..
 
-lookup time = 6.015850 s
+total numbers: 99999999
+
+lookup time = 5.915873 s
 
 remove..
 
-remove time = 21.796309 s
+total numbers: 1
+
+remove time = 21.767515 s
+
 

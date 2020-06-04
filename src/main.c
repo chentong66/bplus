@@ -8,12 +8,15 @@ int main(){
 	printf("0-99999999\n");
 	printf("insert..\n");
 	t = clock();
-	while ( i < 100000000) {
+	while ( i < 25000000) {
 		btree_insert(&head,i);
 		btree_insert(&head,100000000 - i);
+		btree_insert(&head,50000000 - i);
+		btree_insert(&head,50000000 + i);
 		i++;
 	}
 	t = clock() - t;
+	btree_show(head);
 	printf("insert time = %lf s\n",((float)(t) / CLOCKS_PER_SEC));
 	printf("lookup..\n");
 	t = clock();
@@ -25,6 +28,7 @@ int main(){
 	}
 	i = 100000000;
 	t = clock() - t;
+	btree_show(head);
 	printf("lookup time = %lf s\n",((float)(t) / CLOCKS_PER_SEC));
 	printf("remove..\n");
 	t = clock();
@@ -34,6 +38,7 @@ int main(){
 		i--;
 	}
 	t = clock() - t;
+	btree_show(head);
 	printf("remove time = %lf s\n",((float)(t) / CLOCKS_PER_SEC));
 //	btree_show(head);
 	return 0;
